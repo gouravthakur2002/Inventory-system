@@ -1,5 +1,5 @@
 """
-Django settings for core project.
+Django settings for core project (works for both local and Render deployment)
 """
 
 import os
@@ -8,20 +8,20 @@ from pathlib import Path
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# 🔐 Secret key handling (secure for Render)
 SECRET_KEY = os.environ.get(
     "SECRET_KEY",
-    "qyu(9l9v%^+r(vt#ecf+36#lis516#3bo5@bo-rd*d%a=!%8#!"
+    "qyu(9l9v%^+r(vt#ecf+36#lis516#3bo5@bo-rd*d%a=!%8#!"  # fallback for local
 )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+# 🧩 Detect environment (Render sets 'RENDER' variable)
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
-# ✅ Fix for Render host error
+# ✅ Allowed hosts for both local + Render
 ALLOWED_HOSTS = [
-    'inventory-system-86yz.onrender.com',  # your Render app domain
     'localhost',
-    '127.0.0.1'
+    '127.0.0.1',
+    'inventory-system-86yz.onrender.com'  # your Render domain
 ]
 
 # Application definition
@@ -33,10 +33,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Your custom apps
     'homepage',
     'inventory',
     'transactions',
 
+    # Third-party apps
     'widget_tweaks',
     'crispy_forms',
     'login_required',
@@ -44,7 +46,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ Enables static files serving
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ Required for Render static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -74,7 +76,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database (Render uses SQLite fine for small apps)
+# ✅ Database (SQLite for both local and Render small apps)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -82,7 +84,7 @@ DATABASES = {
     }
 }
 
-# Password validation
+# ✅ Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -90,16 +92,19 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
+# ✅ Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# ✅ Static files (for Render)
+# ✅ Static files (CSS, JS, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # local use
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')   # Render collects here
+
+# ✅ WhiteNoise configuration for Render
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ✅ Crispy forms
@@ -114,3 +119,7 @@ LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
     'logout',
     'about',
 ]
+
+# ✅ Render-specific configuration
+if os.environ.get('RENDER', None):
+    ALLOWED_HOSTS.append(os.environ.get('RENDER_EXTERNAL_HOSTNAME'))
