@@ -21,10 +21,17 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'inventory-system-86yz.onrender.com'  # your Render domain
+    'inventory-system-86yz.onrender.com',  # your Render domain
 ]
 
-# Application definition
+# ✅ Add Render dynamic hostname (if available)
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# ---------------------------------------------------------------------
+# Applications
+# ---------------------------------------------------------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -33,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Your custom apps
+    # Custom apps
     'homepage',
     'inventory',
     'transactions',
@@ -41,27 +48,31 @@ INSTALLED_APPS = [
     # Third-party apps
     'widget_tweaks',
     'crispy_forms',
-    'login_required',
 ]
 
+# ---------------------------------------------------------------------
+# Middleware
+# ---------------------------------------------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ Required for Render static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ required for static files on Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'login_required.middleware.LoginRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
 
+# ---------------------------------------------------------------------
+# Templates
+# ---------------------------------------------------------------------
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "templates")],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -76,7 +87,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# ✅ Database (SQLite for both local and Render small apps)
+# ---------------------------------------------------------------------
+# Database (SQLite for both local and Render small apps)
+# ---------------------------------------------------------------------
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -84,7 +97,9 @@ DATABASES = {
     }
 }
 
-# ✅ Password validation
+# ---------------------------------------------------------------------
+# Password validation
+# ---------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -92,34 +107,38 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ✅ Internationalization
+# ---------------------------------------------------------------------
+# Internationalization
+# ---------------------------------------------------------------------
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-# ✅ Static files (CSS, JS, Images)
+# ---------------------------------------------------------------------
+# Static and Media Files
+# ---------------------------------------------------------------------
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # local use
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')   # Render collects here
+STATICFILES_DIRS = [BASE_DIR / 'static']  # Local
+STATIC_ROOT = BASE_DIR / 'staticfiles'    # Collectstatic output for Render
 
-# ✅ WhiteNoise configuration for Render
+# ✅ WhiteNoise configuration for serving static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# ✅ Crispy forms
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-# ✅ Login settings
+# ---------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 
-LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
-    'login',
-    'logout',
-    'about',
-]
-
-# ✅ Render-specific configuration
-if os.environ.get('RENDER', None):
-    ALLOWED_HOSTS.append(os.environ.get('RENDER_EXTERNAL_HOSTNAME'))
+# ---------------------------------------------------------------------
+# Security for Render Deployment
+# ---------------------------------------------------------------------
+if not DEBUG:
+    CSRF_TRUSTED_ORIGINS = [f'https://{host}' for host in ALLOWED_HOSTS if host]
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
